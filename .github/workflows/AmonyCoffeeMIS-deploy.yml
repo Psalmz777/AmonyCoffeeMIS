@@ -52,7 +52,7 @@ jobs:
           run: if [ ! -z "$(doctl registry repository list | grep "$(echo $REPOSITORY_NAME)")" ]; then doctl registry repository delete-manifest $(echo $REPOSITORY_NAME) $(doctl registry repository list-tags $(echo $REPOSITORY_NAME) | grep -o "sha.*") --force; else echo "No repository"; fi  
           
         - name: Push image to DigitalOcean Container Registry
-          run: docker push ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):(echo $IMAGE_TAG | head -c7) 
+          run: docker push ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):$(echo $IMAGE_TAG | head -c7) 
     
   deploy:
     runs-on: ubuntu-latest
@@ -74,4 +74,3 @@ jobs:
               
 
   
-            
