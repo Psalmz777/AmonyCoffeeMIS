@@ -84,11 +84,11 @@ jobs:
             # Login to registry
             docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
             # Stop running container
-            docker stop amonycoffeemis
+            docker stop $(echo $IMAGE_NAME)
             # Remove old container
-            docker rm amonycoffeemis
+            docker rm $(echo $IMAGE_NAME)
             # Run a new container from a new image
             docker run -d \
             --restart always \
-            --name amonycoffeemis \
+            --name $(echo $IMAGE_NAME) \
             ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)     
