@@ -80,8 +80,11 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSHKEY }}
           envs: IMAGE_NAME
-          
+
           script: |
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sudo sh ./get-docker.sh --dry-run
+            docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
             docker stop $(echo $IMAGE_NAME)
             docker rm $(echo $IMAGE_NAME)
             docker run -d \
@@ -89,16 +92,4 @@ jobs:
             --name $(echo $IMAGE_NAME) \
             ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)   
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.2.0
-  
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2.7.0
-  
-      - name: Login to docker container registry
-        uses: docker/login-action@v2.2.0
-        with:
-          registry: ${{ secrets.REGISTRY_NAME }}
-          username: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          password: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}         
   
