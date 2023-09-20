@@ -4,9 +4,9 @@ on:
   pull_request:
     branches:
     - master
-    - docker-b
-    - docker1 
       
+env: 
+    IMAGE_NAME: amonycoffeemis
 jobs:
   build-project: 
     name: Build AmonyCoffeeMIS 
@@ -58,16 +58,16 @@ jobs:
             token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         
         - name: Build container image
-          run: docker build -t ${{ secrets.REGISTRY_NAME }}/amony-coffee-mis:${{ needs.image-tag.outputs.build_id }} .
+          run: docker build -t ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):${{ needs.image-tag.outputs.build_id }} .
           
         - name: Log in to DigitalOcean Container Registry with short-lived credentials
           run: doctl registry login --expiry-seconds 1200
 
         - name: Remove all old images
-          run: if [ ! -z "$(doctl registry repository list | grep "amonycoffeemis")" ]; then doctl registry repository delete-manifest amonycoffeemis $(doctl registry repository list-tags amonycoffeemis | grep -o "sha.*") --force; else echo "No repository"; fi  
+          run: if [ ! -z "$(doctl registry repository list | grep "$(echo $IMAGE_NAME)")" ]; then doctl registry repository delete-manifest $(echo $IMAGE_NAME) $(doctl registry repository list-tags $(echo $IMAGE_NAME) | grep -o "sha.*") --force; else echo "No repository"; fi  
           
         - name: Push image to DigitalOcean Container Registry
-          run: docker push ${{ secrets.REGISTRY_NAME }}/amonycoffeemis:${{ needs.image-tag.outputs.build_id }}
+          run: docker push ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):${{ needs.image-tag.outputs.build_id }}
     
   deploy:
     runs-on: ubuntu-latest
@@ -79,6 +79,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSHKEY }}
+          envs: IMAGE_NAME
           script: |
             # Login to registry
             docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
@@ -90,4 +91,4 @@ jobs:
             docker run -d \
             --restart always \
             --name amonycoffeemis \
-            ${{ secrets.REGISTRY_NAME }}/amonycoffeemis:${{ needs.image-tag.outputs.build_id }}      
+            ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):${{ needs.image-tag.outputs.build_id }}      
