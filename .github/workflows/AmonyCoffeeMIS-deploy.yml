@@ -58,7 +58,7 @@ jobs:
             token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         
         - name: Build container image
-          run: docker build -t ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):${{ needs.image-tag.outputs.build_id }} .
+          run: docker build -t ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) .
           
         - name: Log in to DigitalOcean Container Registry with short-lived credentials
           run: doctl registry login --expiry-seconds 1200
@@ -67,7 +67,7 @@ jobs:
           run: if [ ! -z "$(doctl registry repository list | grep "$(echo $IMAGE_NAME)")" ]; then doctl registry repository delete-manifest $(echo $IMAGE_NAME) $(doctl registry repository list-tags $(echo $IMAGE_NAME) | grep -o "sha.*") --force; else echo "No repository"; fi  
           
         - name: Push image to DigitalOcean Container Registry
-          run: docker push ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):${{ needs.image-tag.outputs.build_id }}
+          run: docker push ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) 
     
   deploy:
     runs-on: ubuntu-latest
@@ -91,4 +91,4 @@ jobs:
             docker run -d \
             --restart always \
             --name amonycoffeemis \
-            ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):${{ needs.image-tag.outputs.build_id }}      
+            ${{ secrets.REGISTRY_NAME }}/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)     
