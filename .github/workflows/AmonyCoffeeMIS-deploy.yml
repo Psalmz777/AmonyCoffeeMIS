@@ -5,8 +5,7 @@ on:
     branches:
     - master
     - docker-b
-    - docker1
-env:    
+    - docker1 
       
 jobs:
   build-project: 
