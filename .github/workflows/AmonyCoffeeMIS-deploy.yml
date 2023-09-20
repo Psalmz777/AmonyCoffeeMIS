@@ -5,6 +5,7 @@ on:
     branches:
     - master
     - docker-b
+    - docker2
 
 env:    
       
