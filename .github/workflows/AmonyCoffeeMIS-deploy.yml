@@ -71,7 +71,7 @@ jobs:
             curl -fsSL https://get.docker.com -o get-docker.sh
             sudo sh ./get-docker.sh
             docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
-            docker run -d ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):$(echo $IMAGE_TAG | head -c7)
+            docker run -d -p ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):$(echo $IMAGE_TAG | head -c7)
               
 
   
