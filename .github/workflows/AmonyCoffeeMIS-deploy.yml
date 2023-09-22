@@ -1,0 +1,79 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: ["master"]
+      
+env: 
+    REPOSITORY_NAME: amonycoffeemis
+    IMAGE_TAG: latest
+
+jobs:
+  build-project: 
+    name: Build AmonyCoffeeMIS 
+    runs-on: ubuntu-latest
+    defaults:
+        run:
+          working-directory: src
+    steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+
+       - name: Setup dotnet
+         uses: actions/setup-dotnet@v3
+         with:
+             dotnet-version: '7.0.x'
+
+       - name: Install dependencies
+         run: dotnet restore
+
+       - name: Build
+         run: dotnet build     
+         continue-on-error: false     
+
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install doctl
+          uses: digitalocean/action-doctl@v2
+          with:
+            token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        
+        - name: Build container image
+          run: docker build -t ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):$(echo $IMAGE_TAG | head -c7) .
+          
+        - name: Log in to DigitalOcean Container Registry with short-lived credentials
+          run: doctl registry login --expiry-seconds 1200
+
+        - name: Remove all old images
+          run: if [ ! -z "$(doctl registry repository list | grep "$(echo $REPOSITORY_NAME)")" ]; then doctl registry repository delete-manifest $(echo $REPOSITORY_NAME) $(doctl registry repository list-tags $(echo $REPOSITORY_NAME) | grep -o "sha.*") --force; else echo "No repository"; fi  
+          
+        - name: Push image to DigitalOcean Container Registry
+          run: docker push ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):$(echo $IMAGE_TAG | head -c7) 
+    
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-image
+    steps:
+      - name: Deploy to Digital Ocean droplet via SSH action
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSHKEY }}
+          envs: IMAGE_TAG,REPOSITORY_NAME
+
+          script: |
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sudo sh ./get-docker.sh
+            docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
+            docker run -d ${{ secrets.REGISTRY_NAME }}/$(echo $REPOSITORY_NAME):$(echo $IMAGE_TAG | head -c7)
+              
+
+  
