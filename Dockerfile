@@ -10,8 +10,10 @@ COPY . ./
 
 # build and publish a release
 RUN dotnet publish -c Release -o out
+
 # build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 WORKDIR /app
+COPY --from=build /app/Data.db .
 COPY --from=build /app/out .
 ENTRYPOINT ["dotnet", "AmonyCoffeeMIS.dll"]
